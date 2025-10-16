@@ -7,25 +7,25 @@ from google.oauth2.service_account import Credentials
 import sys
 import os
 
-# --- KONFIGURACJA LOGGERA ---
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("log.txt"),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
+# # --- KONFIGURACJA LOGGERA ---
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s [%(levelname)s] %(message)s",
+#     handlers=[
+#         logging.FileHandler("log.txt"),
+#         logging.StreamHandler(sys.stdout)
+#     ]
+# )
+# logger = logging.getLogger(__name__)
 
 # --- FUNKCJA DO POBRANIA DANYCH Z GOOGLE SHEETS ---
 def get_data_from_sheets():
-    logger.info("Odczytywanie danych z Google Sheets...")
+    # logger.info("Odczytywanie danych z Google Sheets...")
     creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
     sheet_id = os.getenv("SHEET_ID")
 
     if not creds_json or not sheet_id:
-        logger.warning("Brak danych uwierzytelniających lub ID arkusza — wczytuję z CSV.")
+        # logger.warning("Brak danych uwierzytelniających lub ID arkusza — wczytuję z CSV.")
         return pd.read_csv("data.csv")
 
     creds_dict = eval(creds_json)
@@ -38,7 +38,7 @@ def get_data_from_sheets():
     sheet = client.open_by_key(sheet_id).sheet1
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
-    logger.info(f"Pobrano {len(df)} rekordów z Google Sheets.")
+    # logger.info(f"Pobrano {len(df)} rekordów z Google Sheets.")
     return df
 
 # --- CZYSZCZENIE I STANDARYZACJA ---
@@ -46,7 +46,7 @@ def clean_and_standardize(df: pd.DataFrame):
     total_cells = df.size
     missing_before = df.isna().sum().sum()
 
-    logger.info("Rozpoczynam czyszczenie danych...")
+    # logger.info("Rozpoczynam czyszczenie danych...")
 
     # Usuwanie wierszy z więcej niż 3 brakami
     before_rows = len(df)
@@ -73,7 +73,7 @@ def clean_and_standardize(df: pd.DataFrame):
     changed_percent = (filled / total_cells) * 100
     removed_percent = (removed_rows / before_rows) * 100
 
-    logger.info(f"Uzupełniono {changed_percent:.2f}% danych, usunięto {removed_percent:.2f}% wierszy.")
+    # logger.info(f"Uzupełniono {changed_percent:.2f}% danych, usunięto {removed_percent:.2f}% wierszy.")
     return df, changed_percent, removed_percent
 
 # --- GENEROWANIE RAPORTU ---
@@ -83,7 +83,7 @@ def generate_report(changed_percent, removed_percent):
         f.write("=============================\n")
         f.write(f"Uzupełniono: {changed_percent:.2f}% danych\n")
         f.write(f"Usunięto: {removed_percent:.2f}% danych\n")
-    logger.info("Raport został zapisany w pliku report.txt")
+    # logger.info("Raport został zapisany w pliku report.txt")
 
 if __name__ == "__main__":
     # --- AUTOMATYCZNE URUCHOMIENIE generator_danych.py ---
@@ -96,4 +96,4 @@ if __name__ == "__main__":
     df, changed, removed = clean_and_standardize(df)
     generate_report(changed, removed)
     df.to_csv("cleaned_data.csv", index=False)
-    logger.info("Proces zakończony pomyślnie ✅")
+    # logger.info("Proces zakończony pomyślnie ✅")
