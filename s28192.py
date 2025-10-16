@@ -33,10 +33,6 @@ def upload_to_sheets(df: pd.DataFrame):
     sheet = client.open_by_key(sheet_id).sheet1
 
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    num_cols = df.select_dtypes(include=[np.number]).columns
-    df[num_cols] = df[num_cols].fillna(0)
-    for col in df.select_dtypes(include=[object]).columns:
-        df[col] = df[col].fillna("Brak danych")
 
     sheet.clear()
     sheet.update([df.columns.values.tolist()] + df.values.tolist())
@@ -69,9 +65,11 @@ def clean_data(df: pd.DataFrame):
     after_rows = len(df)
     removed_rows = before_rows - after_rows
     for col in df.select_dtypes(include=[np.number]).columns:
-        df[col].fillna(df[col].median(), inplace=True)
+        median_value = df[col].median()
+        df[col].fillna(median_value, inplace=True)
     for col in df.select_dtypes(include=[object]).columns:
-        df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else "Brak danych", inplace=True)
+        mode_value = df[col].mode()[0] if not df[col].mode().empty else "Brak danych"
+        df[col].fillna(mode_value, inplace=True)
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     scaler = StandardScaler()
     df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
