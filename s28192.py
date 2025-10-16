@@ -87,7 +87,7 @@ def generate_report(changed_percent, removed_percent):
 
 if __name__ == "__main__":
     # --- AUTOMATYCZNE URUCHOMIENIE generator_danych.py ---
-    student_number = int(os.getenv("STUDENT_NUMBER", "12345"))
+    student_number = int(os.getenv("STUDENT_NUMBER", "28192"))
     os.system(f"python generator_danych.py -s {student_number}")
     df = pd.read_csv(f"data_student_{student_number}.csv")
     df.to_csv("data.csv", index=False)

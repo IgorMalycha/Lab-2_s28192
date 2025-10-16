@@ -28,7 +28,7 @@ jobs:
         GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         SHEET_ID: ${{ secrets.SHEET_ID }}
       run: |
-        python clean_data.py
+        python s28192.py
 
     - name: Display report
       run: cat report.txt
