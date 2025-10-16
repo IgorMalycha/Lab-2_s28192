@@ -32,10 +32,18 @@ def upload_to_sheets(df: pd.DataFrame):
     client = gspread.authorize(creds)
     sheet = client.open_by_key(sheet_id).sheet1
 
+    # Zamiana inf/-inf na NaN
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    # Wypełnienie braków w numerycznych 0, obiektowe jako "Brak danych"
+    for col in df.select_dtypes(include=[np.number]).columns:
+        df[col] = df[col].fillna(0).astype(float)
+    for col in df.select_dtypes(include=[object]).columns:
+        df[col] = df[col].fillna("Brak danych")
 
+    # Konwersja wszystkich danych na string przed uploadem
+    df_str = df.astype(str)
     sheet.clear()
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())
+    sheet.update([df_str.columns.values.tolist()] + df_str.values.tolist())
     logger.info(f"Dane zostały wgrane do Google Sheets ({len(df)} wierszy).")
 
 def get_data_from_sheets():
