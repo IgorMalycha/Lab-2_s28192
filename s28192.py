@@ -32,13 +32,8 @@ def upload_to_sheets(df: pd.DataFrame):
     client = gspread.authorize(creds)
     sheet = client.open_by_key(sheet_id).sheet1
 
-    # Zamiana inf/-inf na NaN
+    # Zamiana inf/-inf na NaN, ale braków nie wypełniamy
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    # Wypełnienie braków w numerycznych 0, obiektowe jako "Brak danych"
-    for col in df.select_dtypes(include=[np.number]).columns:
-        df[col] = df[col].fillna(0).astype(float)
-    for col in df.select_dtypes(include=[object]).columns:
-        df[col] = df[col].fillna("Brak danych")
 
     # Konwersja wszystkich danych na string przed uploadem
     df_str = df.astype(str)
@@ -68,23 +63,29 @@ def clean_data(df: pd.DataFrame):
     total_cells = df.size
     missing_before = df.isna().sum().sum()
     logger.info("Rozpoczynam czyszczenie danych...")
+
     before_rows = len(df)
     df = df.dropna(thresh=len(df.columns) - 3)
     after_rows = len(df)
     removed_rows = before_rows - after_rows
+
     for col in df.select_dtypes(include=[np.number]).columns:
         median_value = df[col].median()
         df[col].fillna(median_value, inplace=True)
+
     for col in df.select_dtypes(include=[object]).columns:
         mode_value = df[col].mode()[0] if not df[col].mode().empty else "Brak danych"
         df[col].fillna(mode_value, inplace=True)
+
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     scaler = StandardScaler()
     df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+
     missing_after = df.isna().sum().sum()
     filled = missing_before - missing_after
     changed_percent = (filled / total_cells) * 100
     removed_percent = (removed_rows / before_rows) * 100
+
     logger.info(f"Czyszczenie danych zakończone: uzupełniono {changed_percent:.2f}% danych, usunięto {removed_percent:.2f}% wierszy.")
     return df, changed_percent, removed_percent
 
@@ -100,11 +101,15 @@ if __name__ == "__main__":
     student_number = int(os.getenv("STUDENT_NUMBER", "28192"))
     logger.info("Uruchamiam generator_danych.py")
     os.system(f"python generator_danych.py -s {student_number}")
+
     df = pd.read_csv(f"data_student_{student_number}.csv")
     df.to_csv("data.csv", index=False)
+
     upload_to_sheets(df)
     df = get_data_from_sheets()
+
     df, changed, removed = clean_data(df)
     generate_report(changed, removed)
     df.to_csv("cleaned_data.csv", index=False)
+
     logger.info("Proces zakończony pomyślnie ✅")
