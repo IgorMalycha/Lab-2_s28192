@@ -19,33 +19,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def upload_to_sheets(df: pd.DataFrame):
-    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    creadentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
     sheet_id = os.getenv("SHEET_ID")
-    if not creds_json or not sheet_id:
-        logger.warning("Brak danych uwierzytelniających lub ID arkusza — pomijam upload do Sheets.")
-        return
-    creds_dict = json.loads(creds_json)
-    creds = Credentials.from_service_account_info(
-        creds_dict,
+    creadentials_dict = json.loads(creadentials_json)
+    creadentials = Credentials.from_service_account_info(
+        creadentials_dict,
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
     )
-    client = gspread.authorize(creds)
+    client = gspread.authorize(creadentials)
     sheet = client.open_by_key(sheet_id).sheet1
 
-    # Zamiana inf/-inf na NaN, ale braków nie wypełniamy
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-    # Konwersja wszystkich danych na string przed uploadem
     df_str = df.astype(str)
     sheet.clear()
     sheet.update([df_str.columns.values.tolist()] + df_str.values.tolist())
-    logger.info(f"Dane zostały wgrane do Google Sheets ({len(df)} wierszy).")
+    logger.info(f"Dane zostaly zaladowane do google shets: {len(df)} wierszy.")
 
 def get_data_from_sheets():
     creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
     sheet_id = os.getenv("SHEET_ID")
     if not creds_json or not sheet_id:
-        logger.warning("Brak danych uwierzytelniających lub ID arkusza — wczytuję z CSV.")
         return pd.read_csv("data.csv")
     creds_dict = json.loads(creds_json)
     creds = Credentials.from_service_account_info(
@@ -56,13 +50,13 @@ def get_data_from_sheets():
     sheet = client.open_by_key(sheet_id).sheet1
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
-    logger.info(f"Pobrano {len(df)} rekordów z Google Sheets.")
+    logger.info(f"Pobrano {len(df)} rekordow z google sheets.")
     return df
 
 def clean_data(df: pd.DataFrame):
     total_cells = df.size
     missing_before = df.isna().sum().sum()
-    logger.info("Rozpoczynam czyszczenie danych...")
+    logger.info("Proces czyszczenie danych")
 
     before_rows = len(df)
     df = df.dropna(thresh=len(df.columns) - 3)
@@ -86,20 +80,19 @@ def clean_data(df: pd.DataFrame):
     changed_percent = (filled / total_cells) * 100
     removed_percent = (removed_rows / before_rows) * 100
 
-    logger.info(f"Czyszczenie danych zakończone: uzupełniono {changed_percent:.2f}% danych, usunięto {removed_percent:.2f}% wierszy.")
+    logger.info(f"Wynik czyszczenia danych: uzupelniono {changed_percent:.2f}% danych, usunieto {removed_percent:.2f}% danych.")
     return df, changed_percent, removed_percent
 
 def generate_report(changed_percent, removed_percent):
     with open("report.txt", "w", encoding="utf-8") as f:
-        f.write("RAPORT Z CZYSZCZENIA DANYCH\n")
-        f.write("============================\n")
-        f.write(f"Uzupełniono: {changed_percent:.2f}% danych\n")
-        f.write(f"Usunięto: {removed_percent:.2f}% danych\n")
+        f.write("Raport z czyszczenia danych\n")
+        f.write(f"Uzupelniono: {changed_percent:.2f}% danych\n")
+        f.write(f"Usunieto: {removed_percent:.2f}% danych\n")
     logger.info("Raport zapisany w report.txt")
 
 if __name__ == "__main__":
     student_number = int(os.getenv("STUDENT_NUMBER", "28192"))
-    logger.info("Uruchamiam generator_danych.py")
+    logger.info("Start pliku generator_danych.py")
     os.system(f"python generator_danych.py -s {student_number}")
 
     df = pd.read_csv(f"data_student_{student_number}.csv")
@@ -112,4 +105,4 @@ if __name__ == "__main__":
     generate_report(changed, removed)
     df.to_csv("cleaned_data.csv", index=False)
 
-    logger.info("Proces zakończony pomyślnie ✅")
+    logger.info("Proces zakonczony")
