@@ -1,0 +1,43 @@
+name: Data Cleaning Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run data generation and cleaning
+      env:
+        STUDENT_NUMBER: 28192
+        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        SHEET_ID: ${{ secrets.SHEET_ID }}
+      run: |
+        python clean_data.py
+
+    - name: Display report
+      run: cat report.txt
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: processed-data
+        path: |
+          cleaned_data.csv
+          report.txt
+          log.txt

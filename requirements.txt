@@ -1,0 +1,10 @@
+numpy
+pandas
+faker
+argparse
+gspread
+google-auth
+scikit-learn
+
+
+
